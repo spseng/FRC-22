@@ -189,7 +189,11 @@ public class Robot extends TimedRobot {
     */
     //}
     if(wockyStick.getYButton()){
-      mySpark.set(1);
+      mySpark.set(wockyStick.getRawAxis(2));
+    } else if (wockyStick.getXButton()) {
+      mySpark.set(-1);
+    } else {
+      mySpark.set(0);
     }
     System.out.println(range1+", "+range2);
     
