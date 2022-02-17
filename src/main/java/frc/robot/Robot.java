@@ -7,8 +7,7 @@ package frc.robot;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.drive.DifferentialDrive;
-import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
+import edu.wpi.first.wpilibj.motorcontrol.Spark;
 
 // odom imports:
 import com.playingwithfusion.CANVenom;
@@ -24,13 +23,12 @@ import edu.wpi.first.wpilibj.GenericHID;
  * directory.
  */
 public class Robot extends TimedRobot {
-  private final PWMSparkMax m_leftDrive = new PWMSparkMax(0);
-  private final PWMSparkMax m_rightDrive = new PWMSparkMax(1);
-  private final DifferentialDrive m_robotDrive = new DifferentialDrive(m_leftDrive, m_rightDrive);
   private final Joystick stick1 = new Joystick(0);
   private final Joystick stick2 = new Joystick(1);
   private final Timer m_timer = new Timer();
-  
+  private final Spark mySpark = new Spark(0); // 0 is the RIO PWM port this is connected to
+
+
   // odom constructors:
   CANVenom canMotor1 = new CANVenom(0); // argument is motor ID number. get this by web browser: 10.15.12.2:5812
   CANVenom canMotor2 = new CANVenom(1); // argument is motor ID number. get this by web browser: 10.15.12.2:5812
@@ -39,7 +37,14 @@ public class Robot extends TimedRobot {
   private final Ultrasonic sonic1 = new Ultrasonic(0, 1); 
   private final Ultrasonic sonic2 = new Ultrasonic(2, 3); 
 
-
+  public void step(double motor1, double motor2) {
+    canMotor1.setCommand(ControlMode.SpeedControl , motor1 );
+    canMotor2.setCommand(ControlMode.SpeedControl , motor2 );
+  }
+  public void turn(double speed) {
+    canMotor1.setCommand(ControlMode.Proportional , speed );
+    canMotor2.setCommand(ControlMode.Proportional , -speed );
+  }
   
   /**
    * This function is run when the robot is first started up and should be used for any
@@ -66,12 +71,7 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during autonomous. */
   @Override
   public void autonomousPeriodic() {
-    // Drive for 2 seconds
-    if (m_timer.get() < 2.0) {
-      m_robotDrive.arcadeDrive(0.5, 0.0); // drive forwards half speed
-    } else {
-      m_robotDrive.stopMotor(); // stop robot
-    }
+    
   }
 
   /** This function is called once each time the robot enters teleoperated mode. */
@@ -168,8 +168,29 @@ public class Robot extends TimedRobot {
       }
     }
 
-    double range1 = sonic1.getRangeInches();
-    double range2 = sonic2.getRangeInches();
+    double range1 = sonic1.getRangeInches(); // left
+    double range2 = sonic2.getRangeInches(); // right
+    // if(wockyStick.getBButton()){
+    if(Math.pow(range1, 2)>Math.pow(range2,2)+2) {
+      turn(-0.2);
+      System.out.println("Turning Right");
+    } else if (Math.pow(range1,2)+2<Math.pow(range2,2)) {
+      turn(0.2);
+      System.out.println("Turning Left");
+    }
+
+    /*
+    Turning System?
+    if(wockyStick.getAButton()){
+      double turnSpeed = 0.3;
+      double error = range1 - range2;
+      turn(error * turnSpeed);
+    }
+    */
+    //}
+    if(wockyStick.getYButton()){
+      mySpark.set(1);
+    }
     System.out.println(range1+", "+range2);
     
     //  else if (wockyStick.getBButton()) {
